@@ -16,7 +16,13 @@ git clone <url-репозитория>
 cd <название-проекта>
 ```
 
-3. **Запустите проект:**
+3. **Настройте переменные окружения:**
+   - Скопируйте `.env.example` → `.env` в корне проекта
+   - Скопируйте `backend/.env.example` → `backend/.env`
+   - Скопируйте `frontend/.env.example` → `frontend/.env`
+   - При необходимости отредактируйте значения в `.env` файлах
+
+4. **Запустите проект:**
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
