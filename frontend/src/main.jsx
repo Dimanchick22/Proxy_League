@@ -5,6 +5,7 @@ import App from './App'
 import './styles/index.css'
 import './styles/chat.css'
 import './styles/profile.css'
+import './styles/game_match.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

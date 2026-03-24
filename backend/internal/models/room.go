@@ -28,8 +28,9 @@ type Room struct {
 	IsPrivate   bool       `gorm:"default:false" json:"is_private"`
 
 	// Создатель комнаты (хост)
-	HostID uint `json:"host_id"`
-	Host   User `gorm:"foreignKey:HostID" json:"host,omitempty"`
+	HostID          uint       `json:"host_id"`
+	Host            User       `gorm:"foreignKey:HostID" json:"host,omitempty"`
+	HostLastSeenAt  *time.Time `json:"host_last_seen_at,omitempty"` // для отслеживания AFK
 
 	// Участники комнаты
 	Participants []User `gorm:"many2many:room_participants;" json:"participants,omitempty"`

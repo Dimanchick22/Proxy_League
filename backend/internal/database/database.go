@@ -48,6 +48,7 @@ func Migrate() error {
 		&models.UserWeapon{},
 		&models.UserSkill{},
 		&models.UserRank{},
+		&models.GameMatch{},
 	)
 
 	if err != nil {

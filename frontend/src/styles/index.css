@@ -64,6 +64,8 @@
   --gradient-secondary: linear-gradient(135deg, #fe640b 0%, #dc8a78 100%);
   --gradient-accent: linear-gradient(135deg, #fe640b 0%, #df8e1d 100%);
   --gradient-dark: linear-gradient(180deg, #e6e9ef 0%, #dce0e8 100%);
+  /* Text gradient — visible on light background */
+  --gradient-heading: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
 
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(76, 79, 105, 0.1);
@@ -136,6 +138,8 @@
   --gradient-secondary: linear-gradient(135deg, #fab387 0%, #f5e0dc 100%);
   --gradient-accent: linear-gradient(135deg, #fab387 0%, #f9e2af 100%);
   --gradient-dark: linear-gradient(180deg, #181825 0%, #11111b 100%);
+  /* Text gradient — visible on dark background */
+  --gradient-heading: linear-gradient(135deg, #fab387 0%, #f9e2af 100%);
 
   /* Shadows */
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
@@ -1480,7 +1484,7 @@ body::before {
 }
 
 .match-header {
-  background: var(--bg-tertiary);
+  background: var(--surface-0);
   padding: 0.75rem 1.25rem;
   display: flex;
   justify-content: space-between;
@@ -2730,7 +2734,7 @@ body::before {
 }
 
 .badge-muted {
-  background: var(--bg-tertiary);
+  background: var(--surface-0);
   border: 1px solid var(--border-color);
   color: var(--text-muted);
 }
@@ -2799,3 +2803,37 @@ body::before {
     font-size: 2.5rem;
   }
 }
+
+/* Room card delete button */
+.room-delete-btn {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(243, 139, 168, 0.15);
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: all var(--transition-fast);
+  opacity: 0;
+}
+
+.room-card:hover .room-delete-btn,
+.content-card:hover .room-delete-btn {
+  opacity: 1;
+}
+
+.room-delete-btn:hover {
+  background: var(--danger);
+  color: white;
+  transform: scale(1.15);
+}
+

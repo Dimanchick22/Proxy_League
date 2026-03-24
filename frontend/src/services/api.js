@@ -86,6 +86,16 @@ export const gameProfileAPI = {
   update: (data) => api.put('/game-profile', data),
 }
 
+// Game Match API
+export const gameAPI = {
+  startGame: (roomId) => api.post(`/rooms/${roomId}/game/start`),
+  getMatch: (roomId) => api.get(`/rooms/${roomId}/game`),
+  submitCharacters: (roomId, characterIds) =>
+    api.post(`/rooms/${roomId}/game/characters`, { character_ids: characterIds }),
+  submitStageTime: (roomId, stage, timeSeconds) =>
+    api.post(`/rooms/${roomId}/game/stage-time`, { stage, time_seconds: timeSeconds }),
+}
+
 // WebSocket API
 export const wsAPI = {
   getOnlineUsers: () => api.get('/online'),

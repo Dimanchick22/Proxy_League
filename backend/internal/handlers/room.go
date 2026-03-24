@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/Dimanchick22/ProxyLeague/internal/database"
 	"github.com/Dimanchick22/ProxyLeague/internal/models"
@@ -24,13 +25,25 @@ func (h *RoomHandler) CreateRoom(c *gin.Context) {
 		return
 	}
 
+	// Проверка: у пользователя может быть только одно активное лобби
+	var existingRoom models.Room
+	if err := database.DB.Where(
+		"host_id = ? AND status NOT IN ?",
+		userID,
+		[]models.RoomStatus{models.RoomStatusCompleted},
+	).First(&existingRoom).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "You already have an active room"})
+		return
+	}
+
 	room := models.Room{
-		Name:        req.Name,
-		Description: req.Description,
-		MaxPlayers:  req.MaxPlayers,
-		IsPrivate:   req.IsPrivate,
-		HostID:      userID.(uint),
-		Status:      models.RoomStatusWaiting,
+		Name:           req.Name,
+		Description:    req.Description,
+		MaxPlayers:     req.MaxPlayers,
+		IsPrivate:      req.IsPrivate,
+		HostID:         userID.(uint),
+		Status:         models.RoomStatusWaiting,
+		HostLastSeenAt: func() *time.Time { t := time.Now(); return &t }(),
 	}
 
 	if req.IsPrivate && req.Password != "" {
@@ -59,7 +72,9 @@ func (h *RoomHandler) GetRooms(c *gin.Context) {
 
 	query := database.DB.Preload("Host").Preload("Participants")
 
-	query = query.Where("is_private = ?", false)
+	if status := c.Query("status"); status != "" {
+		query = query.Where("status = ?", status)
+	}
 
 	if err := query.Find(&rooms).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch rooms"})
@@ -71,11 +86,18 @@ func (h *RoomHandler) GetRooms(c *gin.Context) {
 
 func (h *RoomHandler) GetRoom(c *gin.Context) {
 	id := c.Param("id")
+	userID, _ := c.Get("user_id")
 
 	var room models.Room
 	if err := database.DB.Preload("Host").Preload("Participants").First(&room, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Room not found"})
 		return
+	}
+
+	// Обновить время последней активности хоста
+	if userID != nil && room.HostID == userID.(uint) {
+		now := time.Now()
+		database.DB.Model(&room).Update("host_last_seen_at", now)
 	}
 
 	c.JSON(http.StatusOK, room)

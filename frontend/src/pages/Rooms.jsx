@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { roomAPI } from '../services/api'
+import { useAuthStore } from '../stores/authStore'
 import CreateRoomModal from '../components/CreateRoomModal'
 import { useTranslation } from '../hooks/useTranslation'
 
 const Rooms = () => {
   const { t } = useTranslation()
+  const { user } = useAuthStore()
   const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -24,6 +26,18 @@ const Rooms = () => {
       console.error('Failed to fetch rooms:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteRoom = async (e, roomId) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!window.confirm(t('confirmDeleteRoom'))) return
+    try {
+      await roomAPI.delete(roomId)
+      fetchRooms()
+    } catch (error) {
+      alert(error.response?.data?.error || t('failedToDelete'))
     }
   }
 
@@ -47,9 +61,7 @@ const Rooms = () => {
     }
   }
 
-  const getRoomIcon = (isPrivate) => {
-    return isPrivate ? '🔒' : '🌐'
-  }
+  const getRoomIcon = (isPrivate) => isPrivate ? '🔒' : '🌐'
 
   if (loading) return <div className="loading">{t('loading')}</div>
 
@@ -94,7 +106,18 @@ const Rooms = () => {
           </div>
         ) : (
           rooms.map((room) => (
-            <Link key={room.id} to={`/rooms/${room.id}`} className="content-card room-card">
+            <Link key={room.id} to={`/rooms/${room.id}`} className="content-card room-card" style={{ position: 'relative' }}>
+              {/* Кнопка удаления — только для своих лобби */}
+              {user && room.host?.id === user.id && (
+                <button
+                  className="room-delete-btn"
+                  onClick={(e) => handleDeleteRoom(e, room.id)}
+                  title={t('deleteRoom')}
+                >
+                  ✕
+                </button>
+              )}
+
               <div className="card-header">
                 <div className="card-icon">{getRoomIcon(room.is_private)}</div>
                 <div className="card-badges">

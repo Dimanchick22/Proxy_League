@@ -8,6 +8,7 @@ import (
 	"github.com/Dimanchick22/ProxyLeague/internal/database"
 	"github.com/Dimanchick22/ProxyLeague/internal/handlers"
 	"github.com/Dimanchick22/ProxyLeague/internal/middleware"
+	"github.com/Dimanchick22/ProxyLeague/internal/services"
 	"github.com/Dimanchick22/ProxyLeague/internal/websocket"
 	"github.com/Dimanchick22/ProxyLeague/pkg/config"
 	"github.com/gin-contrib/cors"
@@ -31,6 +32,7 @@ func main() {
 
 	hub := websocket.NewHub()
 	go hub.Run()
+	go services.StartRoomCleanup()
 
 	router := gin.Default()
 
@@ -52,6 +54,7 @@ func main() {
 	roomHandler := handlers.NewRoomHandler()
 	heroHandler := handlers.NewHeroHandler()
 	userHeroHandler := handlers.NewUserHeroHandler(cfg)
+	gameMatchHandler := handlers.NewGameMatchHandler()
 	wsHandler := handlers.NewWebSocketHandler(hub)
 
 	api := router.Group("/api/v1")
@@ -89,6 +92,12 @@ func main() {
 				rooms.POST("/join", roomHandler.JoinRoom)
 				rooms.POST("/:id/leave", roomHandler.LeaveRoom)
 				rooms.DELETE("/:id", roomHandler.DeleteRoom)
+
+				// Game match endpoints
+				rooms.POST("/:id/game/start", gameMatchHandler.StartGame)
+				rooms.GET("/:id/game", gameMatchHandler.GetCurrentMatch)
+				rooms.POST("/:id/game/characters", gameMatchHandler.SubmitCharacters)
+				rooms.POST("/:id/game/stage-time", gameMatchHandler.SubmitStageTime)
 			}
 
 			heroes := protected.Group("/heroes")
