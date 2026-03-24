@@ -21,6 +21,9 @@ const RoomDetail = () => {
   const [timerLeft, setTimerLeft] = useState(TIMER_DURATION)
   const [stageInput, setStageInput] = useState({ minutes: '', seconds: '' })
   const [activeStageDialog, setActiveStageDialog] = useState(null) // 1 or 2
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordInput, setPasswordInput] = useState('')
+  const [passwordError, setPasswordError] = useState('')
   const timerRef = useRef(null)
   const pollRef = useRef(null)
 
@@ -195,11 +198,36 @@ const RoomDetail = () => {
   }
 
   const handleJoin = async () => {
+    if (room?.is_private) {
+      setPasswordInput('')
+      setPasswordError('')
+      setShowPasswordModal(true)
+      return
+    }
     try {
       await roomAPI.join({ room_id: parseInt(id) })
       fetchRoom()
     } catch (error) {
       alert(error.response?.data?.error || t('failedToJoin'))
+    }
+  }
+
+  const handlePasswordJoin = async () => {
+    if (!passwordInput.trim()) {
+      setPasswordError(t('requiredFields'))
+      return
+    }
+    try {
+      await roomAPI.join({ room_id: parseInt(id), password: passwordInput })
+      setShowPasswordModal(false)
+      fetchRoom()
+    } catch (error) {
+      const msg = error.response?.data?.error
+      if (msg === 'Invalid password') {
+        setPasswordError(t('invalidRoomPassword'))
+      } else {
+        setPasswordError(msg || t('failedToJoin'))
+      }
     }
   }
 
@@ -650,6 +678,38 @@ const RoomDetail = () => {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===== МОДАЛ ВВОДА ПАРОЛЯ ===== */}
+      {showPasswordModal && (
+        <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('roomPassword')}</h2>
+              <button className="modal-close" onClick={() => setShowPasswordModal(false)}>✕</button>
+            </div>
+            <div className="form-group">
+              <label>{t('password')}</label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError('') }}
+                onKeyDown={(e) => e.key === 'Enter' && handlePasswordJoin()}
+                placeholder={t('roomPassword')}
+                autoFocus
+              />
+              {passwordError && <div className="error-message">{passwordError}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setShowPasswordModal(false)}>
+                {t('cancel')}
+              </button>
+              <button className="btn-primary" onClick={handlePasswordJoin}>
+                {t('joinRoom')}
+              </button>
+            </div>
           </div>
         </div>
       )}

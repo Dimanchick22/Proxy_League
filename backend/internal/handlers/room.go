@@ -120,7 +120,7 @@ func (h *RoomHandler) JoinRoom(c *gin.Context) {
 
 	if room.IsPrivate && room.Password != "" {
 		if err := bcrypt.CompareHashAndPassword([]byte(room.Password), []byte(req.Password)); err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Invalid password"})
 			return
 		}
 	}

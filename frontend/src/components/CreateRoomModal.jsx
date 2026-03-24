@@ -19,8 +19,8 @@ const CreateRoomModal = ({ isOpen, onClose, onSuccess }) => {
     setError('')
 
     try {
-      await roomAPI.create(formData)
-      onSuccess()
+      const response = await roomAPI.create(formData)
+      onSuccess(response.data)
       onClose()
       setFormData({
         name: '',
