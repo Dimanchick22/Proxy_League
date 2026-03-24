@@ -174,6 +174,7 @@ export const translations = {
     tournamentNotFound: 'Турнир не найден',
     roomNotFound: 'Комната не найдена',
     failedToJoin: 'Не удалось присоединиться',
+    invalidRoomPassword: 'Неверный пароль комнаты',
     createdSuccessfully: 'Успешно создано',
 
     // Tournament/Room Details
@@ -462,6 +463,7 @@ export const translations = {
     tournamentNotFound: 'Tournament not found',
     roomNotFound: 'Room not found',
     failedToJoin: 'Failed to join',
+    invalidRoomPassword: 'Invalid room password',
     createdSuccessfully: 'Created successfully',
 
     // Tournament/Room Details

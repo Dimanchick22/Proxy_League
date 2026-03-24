@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { roomAPI } from '../services/api'
 import { useAuthStore } from '../stores/authStore'
 import CreateRoomModal from '../components/CreateRoomModal'
@@ -7,11 +7,16 @@ import { useTranslation } from '../hooks/useTranslation'
 
 const Rooms = () => {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { user } = useAuthStore()
   const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filter, setFilter] = useState('all')
+  const [passwordModal, setPasswordModal] = useState({ open: false, roomId: null })
+  const [passwordInput, setPasswordInput] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [joiningRoomId, setJoiningRoomId] = useState(null)
 
   useEffect(() => {
     fetchRooms()
@@ -63,6 +68,60 @@ const Rooms = () => {
 
   const getRoomIcon = (isPrivate) => isPrivate ? '🔒' : '🌐'
 
+  const handleRoomClick = async (e, room) => {
+    e.preventDefault()
+    const isAlreadyParticipant = room.participants?.some(p => p.id === user?.id)
+    const isFull = room.participants?.length >= room.max_players
+    const isWaiting = room.status === 'waiting'
+
+    // If already a participant or room is not joinable, just navigate
+    if (isAlreadyParticipant || !isWaiting || isFull) {
+      navigate(`/rooms/${room.id}`)
+      return
+    }
+
+    // Private room — show password prompt
+    if (room.is_private) {
+      setPasswordModal({ open: true, roomId: room.id })
+      setPasswordInput('')
+      setPasswordError('')
+      return
+    }
+
+    // Public room — auto-join then navigate
+    setJoiningRoomId(room.id)
+    try {
+      await roomAPI.join({ room_id: room.id })
+      navigate(`/rooms/${room.id}`)
+    } catch (error) {
+      alert(error.response?.data?.error || t('failedToJoin'))
+    } finally {
+      setJoiningRoomId(null)
+    }
+  }
+
+  const handlePasswordSubmit = async () => {
+    if (!passwordInput.trim()) {
+      setPasswordError(t('requiredFields'))
+      return
+    }
+    setJoiningRoomId(passwordModal.roomId)
+    try {
+      await roomAPI.join({ room_id: passwordModal.roomId, password: passwordInput })
+      setPasswordModal({ open: false, roomId: null })
+      navigate(`/rooms/${passwordModal.roomId}`)
+    } catch (error) {
+      const msg = error.response?.data?.error
+      if (msg === 'Invalid password') {
+        setPasswordError(t('invalidRoomPassword'))
+      } else {
+        setPasswordError(msg || t('failedToJoin'))
+      }
+    } finally {
+      setJoiningRoomId(null)
+    }
+  }
+
   if (loading) return <div className="loading">{t('loading')}</div>
 
   return (
@@ -106,7 +165,7 @@ const Rooms = () => {
           </div>
         ) : (
           rooms.map((room) => (
-            <Link key={room.id} to={`/rooms/${room.id}`} className="content-card room-card" style={{ position: 'relative' }}>
+            <div key={room.id} onClick={(e) => handleRoomClick(e, room)} className="content-card room-card" style={{ position: 'relative', cursor: 'pointer' }}>
               {/* Кнопка удаления — только для своих лобби */}
               {user && room.host?.id === user.id && (
                 <button
@@ -186,7 +245,7 @@ const Rooms = () => {
                 </div>
                 <div className="card-arrow">→</div>
               </div>
-            </Link>
+            </div>
           ))
         )}
       </div>
@@ -194,8 +253,45 @@ const Rooms = () => {
       <CreateRoomModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={fetchRooms}
+        onSuccess={(createdRoom) => {
+          fetchRooms()
+          if (createdRoom?.id) {
+            navigate(`/rooms/${createdRoom.id}`)
+          }
+        }}
       />
+
+      {/* Password modal for private rooms */}
+      {passwordModal.open && (
+        <div className="modal-overlay" onClick={() => setPasswordModal({ open: false, roomId: null })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('roomPassword')}</h2>
+              <button className="modal-close" onClick={() => setPasswordModal({ open: false, roomId: null })}>✕</button>
+            </div>
+            <div className="form-group">
+              <label>{t('password')}</label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError('') }}
+                onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                placeholder={t('roomPassword')}
+                autoFocus
+              />
+              {passwordError && <div className="error-message">{passwordError}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="btn-secondary" onClick={() => setPasswordModal({ open: false, roomId: null })}>
+                {t('cancel')}
+              </button>
+              <button className="btn-primary" onClick={handlePasswordSubmit} disabled={joiningRoomId !== null}>
+                {joiningRoomId ? t('loading') : t('joinRoom')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
